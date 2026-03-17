@@ -166,3 +166,39 @@ output "api_url" {
   description = "URL base de la API de tareas"
   value       = aws_apigatewayv2_stage.default.invoke_url
 }
+
+# 1. Creamos el Grupo de Usuarios (User Pool)
+resource "aws_cognito_user_pool" "pool" {
+  name = "Unidad3_UserPool"
+
+  # Configuración básica de contraseña
+  password_policy {
+    minimum_length = 8
+    require_lowercase = true
+    require_numbers   = true
+  }
+
+  auto_verified_attributes = ["email"]
+}
+
+# 2. Creamos el Cliente de la Aplicación (App Client)
+# Es lo que permite que React se comunique con Cognito
+resource "aws_cognito_user_pool_client" "client" {
+  name         = "ReactAppClient"
+  user_pool_id = aws_cognito_user_pool.pool.id
+  
+  explicit_auth_flows = [
+    "ALLOW_USER_PASSWORD_AUTH",
+    "ALLOW_REFRESH_TOKEN_AUTH",
+    "ALLOW_USER_SRP_AUTH"
+  ]
+}
+
+# 3. Outputs: Para que Terraform nos diga los IDs al terminar
+output "cognito_user_pool_id" {
+  value = aws_cognito_user_pool.pool.id
+}
+
+output "cognito_client_id" {
+  value = aws_cognito_user_pool_client.client.id
+}

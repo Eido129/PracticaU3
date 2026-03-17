@@ -1,7 +1,22 @@
 import { useState, useEffect } from 'react'
+// 1. Importaciones de AWS Amplify
+import { Amplify } from 'aws-amplify'
+import { Authenticator } from '@aws-amplify/ui-react'
+import '@aws-amplify/ui-react/styles.css'
 import './App.css'
 
-const API_BASE = import.meta.env.VITE_API_URL || ''
+// 2. Configuración con tus IDs de Terraform
+Amplify.configure({
+  Auth: {
+    Cognito: {
+      userPoolId: 'us-east-1_by4SP5FBr',
+      userPoolClientId: '5o6pcpfncai0376df1ndpohhkt',
+    }
+  }
+});
+
+// Tu URL de API Gateway
+const API_BASE = "https://8iu9v78txc.execute-api.us-east-1.amazonaws.com"
 
 function App() {
   const [tasks, setTasks] = useState([])
@@ -13,13 +28,9 @@ function App() {
   const [editingTitle, setEditingTitle] = useState('')
 
   async function fetchTasks() {
-    if (!API_BASE) {
-      setError('Configura VITE_API_URL (ej. en .env) con la URL de la API.')
-      setLoading(false)
-      return
-    }
     setError(null)
     try {
+      // Nota: agregamos /tasks si tu API lo requiere, o dejamos API_BASE solo
       const res = await fetch(`${API_BASE}/tasks`)
       if (!res.ok) throw new Error(res.statusText)
       const data = await res.json()
@@ -39,7 +50,7 @@ function App() {
   async function addTask(e) {
     e.preventDefault()
     const title = newTaskTitle.trim()
-    if (!title || !API_BASE || adding) return
+    if (!title || adding) return
     setAdding(true)
     setError(null)
     try {
@@ -59,7 +70,6 @@ function App() {
   }
 
   async function toggleCompleted(task) {
-    if (!API_BASE) return
     setError(null)
     try {
       const res = await fetch(`${API_BASE}/tasks/${task.id}`, {
@@ -76,7 +86,7 @@ function App() {
 
   async function saveEdit(id) {
     const title = editingTitle.trim()
-    if (title === '' || !API_BASE) return
+    if (title === '') return
     setError(null)
     try {
       const res = await fetch(`${API_BASE}/tasks/${id}`, {
@@ -94,7 +104,7 @@ function App() {
   }
 
   async function deleteTask(id) {
-    if (!API_BASE || !window.confirm('¿Eliminar esta tarea?')) return
+    if (!window.confirm('¿Eliminar esta tarea?')) return
     setError(null)
     try {
       const res = await fetch(`${API_BASE}/tasks/${id}`, { method: 'DELETE' })
@@ -115,100 +125,85 @@ function App() {
     setEditingTitle('')
   }
 
+  // 3. Envolvemos el return con el Authenticator
   return (
-    <div className="app">
-      <h1>Lista de tareas</h1>
+    <Authenticator>
+      {({ signOut, user }) => (
+        <div className="app">
+          {/* Barra de usuario superior */}
+          <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+            <span style={{ fontSize: '0.9rem', color: '#888' }}>
+              Sesión iniciada como: <strong>{user.username}</strong>
+            </span>
+            <button onClick={signOut} className="btn-small danger">Cerrar Sesión</button>
+          </header>
 
-      <form className="add-form" onSubmit={addTask}>
-        <input
-          type="text"
-          placeholder="Nueva tarea..."
-          value={newTaskTitle}
-          onChange={(e) => setNewTaskTitle(e.target.value)}
-          disabled={!API_BASE || adding}
-          aria-label="Título de la nueva tarea"
-        />
-        <button type="submit" disabled={!newTaskTitle.trim() || adding}>
-          {adding ? 'Añadiendo…' : 'Añadir'}
-        </button>
-      </form>
+          <h1>Lista de tareas</h1>
 
-      {error && <p className="error">{error}</p>}
+          <form className="add-form" onSubmit={addTask}>
+            <input
+              type="text"
+              placeholder="Nueva tarea..."
+              value={newTaskTitle}
+              onChange={(e) => setNewTaskTitle(e.target.value)}
+              disabled={adding}
+              aria-label="Título de la nueva tarea"
+            />
+            <button type="submit" disabled={!newTaskTitle.trim() || adding}>
+              {adding ? 'Añadiendo…' : 'Añadir'}
+            </button>
+          </form>
 
-      {loading ? (
-        <p className="loading">Cargando tareas…</p>
-      ) : (
-        <ul className="task-list">
-          {tasks.length === 0 && !error && (
-            <li className="empty">No hay tareas. Añade una arriba.</li>
-          )}
-          {tasks.map((task) => (
-            <li
-              key={task.id}
-              className={`task ${task.completed ? 'completed' : ''}`}
-            >
-              <input
-                type="checkbox"
-                checked={task.completed}
-                onChange={() => toggleCompleted(task)}
-                disabled={!API_BASE}
-                aria-label={`Marcar como ${task.completed ? 'pendiente' : 'completada'}`}
-              />
-              {editingId === task.id ? (
-                <>
-                  <input
-                    type="text"
-                    className="edit-input"
-                    value={editingTitle}
-                    onChange={(e) => setEditingTitle(e.target.value)}
-                    onKeyDown={(e) => {
-                      if (e.key === 'Enter') saveEdit(task.id)
-                      if (e.key === 'Escape') cancelEdit()
-                    }}
-                    autoFocus
-                    aria-label="Editar título"
-                  />
-                  <button
-                    type="button"
-                    className="btn-small primary"
-                    onClick={() => saveEdit(task.id)}
-                  >
-                    Guardar
-                  </button>
-                  <button
-                    type="button"
-                    className="btn-small"
-                    onClick={cancelEdit}
-                  >
-                    Cancelar
-                  </button>
-                </>
-              ) : (
-                <>
-                  <span className="task-title">{task.title}</span>
-                  <button
-                    type="button"
-                    className="btn-small"
-                    onClick={() => startEdit(task)}
-                    disabled={!API_BASE}
-                  >
-                    Editar
-                  </button>
-                  <button
-                    type="button"
-                    className="btn-small danger"
-                    onClick={() => deleteTask(task.id)}
-                    disabled={!API_BASE}
-                  >
-                    Eliminar
-                  </button>
-                </>
+          {error && <p className="error">{error}</p>}
+
+          {loading ? (
+            <p className="loading">Cargando tareas…</p>
+          ) : (
+            <ul className="task-list">
+              {tasks.length === 0 && !error && (
+                <li className="empty">No hay tareas. Añade una arriba.</li>
               )}
-            </li>
-          ))}
-        </ul>
+              {tasks.map((task) => (
+                <li
+                  key={task.id}
+                  className={`task ${task.completed ? 'completed' : ''}`}
+                >
+                  <input
+                    type="checkbox"
+                    checked={task.completed}
+                    onChange={() => toggleCompleted(task)}
+                    aria-label={`Marcar como ${task.completed ? 'pendiente' : 'completada'}`}
+                  />
+                  {editingId === task.id ? (
+                    <>
+                      <input
+                        type="text"
+                        className="edit-input"
+                        value={editingTitle}
+                        onChange={(e) => setEditingTitle(e.target.value)}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter') saveEdit(task.id)
+                          if (e.key === 'Escape') cancelEdit()
+                        }}
+                        autoFocus
+                      />
+                      <button onClick={() => saveEdit(task.id)} className="btn-small primary">Guardar</button>
+                      <button onClick={cancelEdit} className="btn-small">Cancelar</button>
+                    </>
+                  ) : (
+                    <>
+                      <span className="task-title">{task.title}</span>
+                      <button onClick={() => startEdit(task)} className="btn-small">Editar</button>
+                      <button onClick={() => deleteTask(task.id)} className="btn-small danger">Eliminar</button>
+                    </>
+                  )}
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
       )}
-    </div>
+    </Authenticator>
   )
 }
 
