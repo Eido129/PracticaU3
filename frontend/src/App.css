@@ -127,3 +127,9 @@ input[type="checkbox"] {
   accent-color: var(--primary-color);
   transform: scale(1.2);
 }
+
+.auth-container {
+  max-width: 500px;
+  margin: 0 auto 30px auto;
+  box-shadow: 0 10px 25px rgba(0,0,0,0.5);
+}
