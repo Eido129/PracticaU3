@@ -1,3 +1,36 @@
+<li key={tarea.id}>
+  <input 
+    type="checkbox" 
+    checked={tarea.completada} 
+    onChange={() => marcarComoCompletada(tarea.id)} 
+  />
+  
+  {/* Estilo condicional aquí */}
+  <span style={{ 
+    textDecoration: tarea.completada ? 'line-through' : 'none',
+    opacity: tarea.completada ? 0.5 : 1
+  }}>
+    {tarea.titulo}
+  </span>
+</li>
+/* Agrega esto a tu archivo CSS */
+.tarea-completada {
+  text-decoration: line-through;
+  opacity: 0.5;
+  color: gray; /* Opcional: también puedes cambiarle el color */
+}
+<li key={tarea.id}>
+  <input 
+    type="checkbox" 
+    checked={tarea.completada} 
+    onChange={() => marcarComoCompletada(tarea.id)} 
+  />
+  
+  {/* Clase condicional aquí */}
+  <span className={tarea.completada ? 'tarea-completada' : ''}>
+    {tarea.titulo}
+  </span>
+</li>
 # Frontend – Lista de tareas (React + Vite)
 
 Proyecto independiente: app React que consume la API del **backend**. Despliegue en Amplify (Terraform en esta carpeta).
