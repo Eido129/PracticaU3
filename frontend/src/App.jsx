@@ -231,6 +231,9 @@ function App() {
                 ) : (
                   <>
                     <span className="task-title">{task.title}</span>
+                    {task.completed && (
+                      <span className="badge-completed">Tarea completada</span>
+                    )}
                     {authStatus === 'authenticated' && (
                       <div className="actions">
                         <button onClick={() => startEdit(task)} className="btn-small">✏️</button>

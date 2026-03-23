@@ -130,6 +130,20 @@ body {
   font-weight: 400;
 }
 
+/* Estilos para tareas completadas */
+.task.completed .task-title {
+  text-decoration: line-through;
+  opacity: 0.5;
+}
+
+.badge-completed {
+  font-size: 0.75rem;
+  background-color: rgba(16, 185, 129, 0.2);
+  color: #10b981;
+  padding: 4px 8px;
+  border-radius: 12px;
+}
+
 .actions {
   display: flex;
   gap: 8px;
